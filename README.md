@@ -20,3 +20,7 @@ For fun DEVELOPING
 
 Fastapi 0.103.1
 
+## 前端
+
+Vue2.x、Vue Router、Vuex
+
