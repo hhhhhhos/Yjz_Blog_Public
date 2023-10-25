@@ -9,6 +9,7 @@
 	<img src="https://img.shields.io/badge/Vue-2.7.14-brightgreen">
 	<img src="https://img.shields.io/badge/Element-UI-orange">
 	<img src="https://img.shields.io/badge/license-MIT-blue">
+</p>
 
 ## 简介
 
