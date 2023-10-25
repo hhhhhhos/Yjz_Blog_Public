@@ -9,18 +9,20 @@
 	<img src="https://img.shields.io/badge/Vue-2.7.14-brightgreen">
 	<img src="https://img.shields.io/badge/Element-UI-orange">
 	<img src="https://img.shields.io/badge/license-MIT-blue">
-
+<br>
 ## 简介
 
 For fun DEVELOPING
 
-
+<br><br><br>
 
 ## 后端
 
 Fastapi 0.103.1
+<br><br><br>
 
 ## 前端
 
 Vue2.x、Vue Router、Vuex
+<br><br><br>
 
