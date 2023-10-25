@@ -1,6 +1,6 @@
 <p align="center">
-	<a href="https://naccl.top/" target="_blank">
-		<img src="./Blog_View/src/assets/tx2.webp" alt="Yjzlog logo" style="width: 200px; height: 200px">
+	<a href="https://yjzblog.top/" target="_blank">
+		<img src="./Blog_View/src/assets/tx2.webp" alt="Yjzlog logo" style="width: 150px; height: 150px">
 	</a>
 </p>
 <p align="center">
