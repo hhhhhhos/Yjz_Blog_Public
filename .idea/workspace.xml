@@ -4,28 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="96cb9496-69e1-4276-b836-cc76d07e9c4c" name="Changes" comment="first create">
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/.idea/05.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/gunicorn.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/requirements2.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_app/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_app/crud.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_app/database.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_app/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_app/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_app/schemas.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_img/img_1.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_img/img_2.gif" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/sql_img/img_3.gif" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Blog_Backup/test.py" afterDir="false" />
+    <list default="true" id="96cb9496-69e1-4276-b836-cc76d07e9c4c" name="Changes" comment="third change">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,7 +54,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "last_opened_file_path": "C:/Users/yjz/PycharmProjects/pythonProject/Code/11/05",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
+    "settings.editor.selected.configurable": "vcs.Mercurial"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
@@ -159,7 +139,21 @@
       <option name="project" value="LOCAL" />
       <updated>1698215129457</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="second create">
+      <created>1698215966530</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1698215966530</updated>
+    </task>
+    <task id="LOCAL-00012" summary="third change">
+      <created>1698216259488</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1698216259488</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -195,6 +189,8 @@
     <MESSAGE value="第3次提交" />
     <MESSAGE value="第4次提交" />
     <MESSAGE value="first create" />
-    <option name="LAST_COMMIT_MESSAGE" value="first create" />
+    <MESSAGE value="second create" />
+    <MESSAGE value="third change" />
+    <option name="LAST_COMMIT_MESSAGE" value="third change" />
   </component>
 </project>
