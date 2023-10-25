@@ -28,7 +28,5 @@ Spring Boot + Vue「前后端分离，人不分离」博客系统
 
 ## 后端
 
-1. 核心框架：[Spring Boot](https://github.com/spring-projects/spring-boot)
-2. 安全框架：[Spring Security](https://github.com/spring-projects/spring-security)
-3. Token：[jjwt](https://github.com/jwtk/jjwt)
+Fastapi 0.103.1
 
