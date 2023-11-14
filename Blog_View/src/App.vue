@@ -74,22 +74,6 @@ html{
   background-color: rgb(245, 248, 250);
 }
 
-.aplayer .aplayer-info .aplayer-controller .aplayer-time {
-    position: relative;
-    right: 0;
-    bottom: 4px;
-    height: 17px;
-    color: #999;
-    font-size: 11px;
-    padding-left: 7px;
-    margin-right: -85px;
-}
-.aplayer.aplayer-withlrc .aplayer-info {
-    margin-right: 92px;
-    height: 90px;
-    padding: 10px 7px 0;
-}
-
 .el-table tbody tr:hover>td {
   background-color:unset !important
 }

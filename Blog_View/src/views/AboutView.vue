@@ -204,7 +204,7 @@ export default {
 </script>
 
 <style scoped>
-@import 'https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css';
+
 @keyframes my-animation {
   from { background-color: red; }
   to { background-color: yellow; }
