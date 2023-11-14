@@ -89,6 +89,24 @@ def get_table_info(db: Session, skip: int, limit: int, datas: List[schemas.DataI
 
     # filter为空判断
     if not datas:
+        # 当表是Comments时 置顶评论
+        if class_name == "Comments":
+            top = []
+            # 只有在第一页才显示置顶评论
+            if skip == 0:
+                top = db.query(models.Comments).filter(models.Comments.is_top == 1).all() # mysql没有bool 只有1 0 null
+            # 获取评论
+            results = db.query(models.Comments).filter(or_(models.Comments.is_top != 1, models.Comments.is_top == None))\
+                .order_by(models.Comments.datetime.desc()).offset(skip).limit(limit).all()
+            # 如果有置顶 头插
+            if top:
+                results = top + results
+            response = {
+                'list': results,
+                'total': db.query(table).count()
+            }
+            return response
+
         response = {
             'list': db.query(table).order_by(table.datetime.desc()).offset(skip).limit(
                 limit).all(),

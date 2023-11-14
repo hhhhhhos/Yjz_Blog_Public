@@ -417,14 +417,16 @@ async def add_process_time_header(request: Request, call_next):
 
     # user_agent库处理设备信息
     user_agent_string = request.headers.get("user-agent")
+    print(user_agent_string)
     user_agent = parse(user_agent_string)
 
     # 获取ip和ip的地址
     ip_address = request.headers.get("x-real-ip")
+    print(ip_address)
     location = "Unknown"
     if ip_address:
         try:
-            response2 = requests.get(f'https://api.vore.top/api/IPdata?ip={ip_address}').json()
+            response2 = requests.get(f'https://api.vore.top/api/IPdata?ip={ip_address}', timeout=5).json()
             if response2.get("code") == 200:
                 city = response2.get("ipdata").get("info3")
                 region = response2.get("ipdata").get("info2")
@@ -441,7 +443,8 @@ async def add_process_time_header(request: Request, call_next):
                     location = "火星人"
             else:
                 location = "Unknown"
-        except:
+        except Exception as e:
+            print("发生了一个异常：", e)
             location = "Unknown"
 
 
