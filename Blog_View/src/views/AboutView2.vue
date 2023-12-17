@@ -3,6 +3,8 @@
     <H
     msg="123123"
     />
+    <div v-if="!imageLoaded" class="el-icon-loading" style="font-size: 42px;"></div>
+    <img v-show="imageLoaded" @load="imageLoaded = true" v-lazy="mypic" style="width: 100%; height: 100%; object-fit: cover;">
     <div
       style="width: 80px;margin: 0 auto;background-color: aqua;position: absolute;left:500px;top:200px;"
       id="test"
@@ -27,11 +29,13 @@ export default {
   },
   data () {
     return {
+      imageLoaded: false,
       xchange: 0, // 仅用来展示数字 好了解目前属性的x值
       ychange: 0, // 仅用来展示数字 好了解目前属性的y值
       ismousedown: false, // 只有鼠标在div按下 @mousemove才往下执行
       recx: 0, // 计算窗口和鼠标的x轴差值
-      recy: 0 // 计算窗口和鼠标的y轴差值
+      recy: 0, // 计算窗口和鼠标的y轴差值
+      mypic: 'https://image1.ljcdn.com/110000-inspection/pc1_vzYTx7GXy.jpg!m_fill,w_250,h_182,l_flianjia_black,o_auto'
     }
   },
   methods: {

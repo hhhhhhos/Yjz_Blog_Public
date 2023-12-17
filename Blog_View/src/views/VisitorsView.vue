@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-unused-vars -->
 <template>
-  <div>
+  <div style="margin-top: 48px;">
     <el-table
       :data="tableData"
       style="width: 100%;margin-top: -30px;"

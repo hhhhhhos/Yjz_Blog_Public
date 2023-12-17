@@ -10,9 +10,10 @@
           <el-menu-item index="/" style="height: 48px;line-height: 50px;"><i class="myicon el-icon-s-home"></i>首页</el-menu-item>
           <el-menu-item index="/comm" style="height: 48px;line-height: 50px;"><i class="myicon el-icon-edit"></i>留言</el-menu-item>
           <el-menu-item index="/visitors" style="height: 48px;line-height: 50px;"><i class="myicon el-icon-user"></i>访客</el-menu-item>
+          <el-menu-item index="/about2" style="height: 48px;line-height: 50px;"><i class="myicon el-icon-s-fold"></i>其他</el-menu-item>
       </el-menu>
       <div class="line" style="height: 40px;"></div>
-      <router-view style="margin-top: 48px;" />
+      <router-view style="" />
 
       <div style="height: 100px;background-color: rgb(245, 248, 250);border-top: 1px solid #e1e8ed ;">
         <div class="hr" style="margin-top: 50px;margin-bottom: 5px;width: 12%;border: 1px solid #e1e8ed;"></div>
@@ -28,7 +29,6 @@
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-
 }
 
 .el-textarea__inner {

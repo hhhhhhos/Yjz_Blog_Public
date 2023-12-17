@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="margin-top: 48px;">
     <el-table
       :data="tableData"
       :header-cell-style="{'text-align':'center'}"

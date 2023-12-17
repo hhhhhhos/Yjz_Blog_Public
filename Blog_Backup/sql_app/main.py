@@ -1,7 +1,7 @@
 import time
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Form
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
@@ -250,8 +250,9 @@ def send_comments(data: MyItem3, modelname: str, comment_id: int, request: Reque
     if len(data.textarea) > 150 or len(data.text) > 10:
         raise HTTPException(status_code=400, detail="你真是个顽皮的小可爱")
 
-    # 判断有无modelname表
+    # 判断有无modelname表(models.py文件下有无名为{modelname}的class)
     if hasattr(models, modelname):
+        # model变成了models.py下的某个class类 可以model()实例化对象
         model = getattr(models, modelname)
         ip_address = request.headers.get("x-real-ip")
         location = "Unknown"
@@ -289,6 +290,9 @@ def send_comments(data: MyItem3, modelname: str, comment_id: int, request: Reque
             "name":data.text,
             "datetime":datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
+        # filled_model或者model 实际上就是class Comments的对象实例化
+        # model(**fill)构造函数
+        # **fill解包等同于model(comment_id=comment_id,ip=ip_address...)
         result = crud.create_add_model(db=db, filled_model=model(**fill))
         if result == "success":
             raise HTTPException(status_code=200, detail="评论已被添加")
@@ -448,7 +452,7 @@ async def add_process_time_header(request: Request, call_next):
             location = "Unknown"
 
 
-
+    '''
     # 输出浏览器的信息
     print("请求方法：", request.method)
     print("请求地址：", request.headers.get('X-Original-URI'))
@@ -464,7 +468,7 @@ async def add_process_time_header(request: Request, call_next):
     print("设备品牌: ", user_agent.device.brand)
     print("是否是爬虫器: ", user_agent.is_bot)
     print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
+    '''
     # 传到数据库
 
     result = crud.create_iphistory2(db=db, iphistory2=models.IpHistory2(
@@ -500,9 +504,14 @@ def subc_info(PageNo: int, PageSize: int, comment_id: int, db: Session = Depends
     return data
 
 # 测试
-@app.get("/yjztest")
-def yjztest(db: Session = Depends(get_db)):
-    return crud.get_models_column_types2(db, '市')
+class MyItem4(BaseModel):
+    content: str
+
+# 测试
+@app.post("/yjztest")
+def yjztest(data: MyItem4):
+    return "运行！！！："+data.content+"😀"
+
 '''
 @app.get("/users/", response_model=List[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

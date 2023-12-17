@@ -79,3 +79,13 @@ export function api8 (vuethis, modelName, typeName, params) {
     params
   })
 }
+
+export function api9 (vuethis, data) {
+  return myrest.rest_test({
+    // 发送blog的html到后端
+    vuethis,
+    url: 'yjztest',
+    method: 'post',
+    data
+  })
+}

@@ -1,16 +1,11 @@
-import redis
-# 1026
-def add(a, b):
-    sum = a+b
-    return sum
+fill = {
+            "comment_id" :234234,
+            "ip" : 4444,
+            "ip_location" : 3333,
+            "info":4444,
+            "name":3333
+        }
+def func(**kwargs):
+    print(kwargs.items())
 
-def mu(a ,b):
-    result = a*b
-    return result
-
-def debug():
-    sum = add(1,2)
-    result = mu(3,4)
-    return sum,result
-
-debug()
+func(a=1,b=2,c=3)

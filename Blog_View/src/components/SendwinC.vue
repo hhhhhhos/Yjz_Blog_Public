@@ -104,7 +104,7 @@ export default {
     },
     fuwei () {
       this.sendcomments.loading = false // 复原发送
-      setTimeout(() => window.location.reload(), 2000) // 重新加载评论
+      // setTimeout(() => window.location.reload(), 2000) // 重新加载评论
     }
   },
   mounted () {

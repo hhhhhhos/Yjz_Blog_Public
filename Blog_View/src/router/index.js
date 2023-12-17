@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import HomeView from '../views/HomeView2.vue'
 import Cookies from 'js-cookie'
 import { v4 as uuidv4 } from 'uuid'
 // import myrest from '@/utils/myrest'
@@ -35,7 +35,7 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
+    component: () => import(/* webpackChunkName: "about" */ '../views/My_Test2.vue')
   },
   {
     path: '/about2',
@@ -43,7 +43,7 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView2.vue')
+    component: () => import(/* webpackChunkName: "about" */ '../views/BaiduMap.vue')
   },
   {
     path: '/about3',
@@ -51,7 +51,7 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView3.vue')
+    component: () => import(/* webpackChunkName: "about" */ '../views/WebSocket.vue')
   },
   {
     path: '/about4',
@@ -59,7 +59,7 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView4.vue')
+    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView2.vue')
   }
 ]
 
