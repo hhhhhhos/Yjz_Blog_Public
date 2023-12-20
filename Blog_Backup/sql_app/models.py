@@ -89,3 +89,8 @@ class User(Base):
     icon_url = Column(String(30)) # 头像地址
     last_visited = Column(DateTime) # 最后访问日期
     role = Column(String(30))  # 角色权限 visitor admin vip1 vip2
+
+# 自定义异常模块
+class CustomException(Exception):
+    def __init__(self, message: str):
+        self.message = message

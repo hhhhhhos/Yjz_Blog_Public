@@ -1,5 +1,5 @@
+# region 原本fastapi引用
 import time
-from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Form
 from sqlalchemy.orm import Session
@@ -24,10 +24,21 @@ from email.mime.multipart import MIMEMultipart
 
 import random
 from fastapi import Request
-import re
 from user_agents import parse
 import requests
 from uuid import uuid4
+# endregion
+
+# region 爬虫作业引用
+import json
+import re
+import subprocess
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import asyncio
+from sql_func import demo
+from .models import CustomException
+import redis
+# endregion
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -511,6 +522,176 @@ class MyItem4(BaseModel):
 @app.post("/yjztest")
 def yjztest(data: MyItem4):
     return "运行！！！："+data.content+"😀"
+
+
+@app.get("/yjztest")
+def yjztest(request: Request):
+
+    print('receive!8')
+    time.sleep(9)
+    print('8end!')
+    return "运行！！！8："+"😀"
+
+@app.get("/yjztest2")
+def yjztest():
+    print('receive!2')
+    return "运行2！！！："+"😀😀😀"
+
+# region 套接字 爬虫大作业功能模块
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+
+    # region 功能函数
+
+    # 发起爬虫函数
+    # callback回调函数为websocket.send_text(json.dumps(x))
+    # callback参数必须为字典
+    # callback要await
+    async def do_sth(params: dict, callback, sendsth_callback):
+        print("dosth")
+        if params.get('page'):
+            print("dosth2")
+            if 1 <= int(params['page']) <= 3:
+                print("dosth3")
+                datas = await demo.local_scr(params, sendsth_callback)
+                if datas:
+                    await sendsth_callback("爬取成功，返回数据")
+                    await callback({
+                        "method": "data",
+                        "params": {
+                            "message": datas,
+                            "city_chn": params.get('city_chn'),
+                            "mode": params.get('mode')
+                        }
+                    })
+            else:
+                print("raise CustomException")
+                raise CustomException("页数不正确")
+        else:
+            print("raise CustomException")
+            raise CustomException("dosth params error")
+
+    # 发送信息到客户端函数
+    async def send_sth(msg: str):
+        await websocket.send_text(json.dumps({
+            "method": "console",
+            "params": {
+                "message": msg
+            }
+        }))
+
+    # endregion
+
+    # region 引入全局变量/定义局部变量
+    # redis代替player
+    r = redis.Redis(host='localhost', port=6379, db=0, password=123321)
+    # 获取列表所有元素
+    player = r.lrange('player', 0, -1)
+    # global player
+    client_ip = None
+    client_port = None
+    now = None
+    # endregion
+
+    # region websocket try处理
+    try:
+        await websocket.accept()
+        # region 获取ip,端口/返回客户端ip,端口/全局player加入ip,端口
+        client_ip = websocket.client.host
+        client_port = websocket.client.port
+        print(f"连接者: {client_ip}:{client_port}")
+        await send_sth(f"{client_ip}:{client_port}已连接")
+
+        # region 只允许一个连接者的判断
+        if player:
+            print(f'进入player判断，player为：{player}')
+            # 创建一个管道，运行ss命令并结合grep过滤本地端口号为8080的连接 WIN命令
+            process = subprocess.Popen(f'netstat -ano | findstr {client_ip}:{client_port}', shell=True, stdout=subprocess.PIPE)
+            # 获取命令的输出
+            output, error = process.communicate()
+            new_return = output.decode()
+            new_return = re.findall(r'\s+\S+\s+\S+\s+\S+\s+(\S+)\s+', new_return, re.DOTALL)
+            print(new_return)
+            # 防空 空则改
+            if not new_return:
+                new_return = ['not found']
+            await send_sth(f"已有连接者：{player[0].decode()}，状态：{new_return[0]}")
+            await send_sth(f"为防止反爬/被封ip，请等待{player[0].decode()}退出后重试")
+            raise CustomException("已有链接")
+        # endregion
+
+
+        now = datetime.now()
+        now = now.replace(microsecond=0)
+        # 尾插入
+        r.rpush('player', f'{client_ip}:{client_port} Time:{now}')
+        # 两分钟后过期 防止bug导致一直在
+        r.expire('player', 120)
+        # player.append(f"{client_ip}:{client_port}")
+        # endregion
+
+
+        # region 等待接收信息 5秒超时/json转dict
+        # 这里收到的是字符串
+        # 5秒收不到新信息断开
+        data = await asyncio.wait_for(websocket.receive_text(), timeout=5)
+        print("收到：", data)
+        # 将类似json的字符串转换为python字典
+        data = json.loads(data)
+        # endregion
+
+        # region 收到信息 做点什么... 防空判断
+        if data.get('method') and data['method'] == "爬虫":
+            # 兰博表达式
+            if data.get('params'):
+                await do_sth(data['params'], lambda x: websocket.send_text(json.dumps(x)), send_sth)
+            else:
+                raise CustomException("params不存在")
+            #await send_sth("hello")
+        else:
+            raise CustomException("method不存在")
+
+        # 字典转json格式字符串
+        # data = json.dumps(data)
+        # await websocket.send_text(data)
+        # endregion
+
+    # endregion
+
+    # region 异常处理
+    # 对方断开连接
+    except WebSocketDisconnect:
+        print(f"{client_ip}:{client_port}断开了连接")
+        print("客户端断开链接，发起return")
+        r.lrem('player', 1, f'{client_ip}:{client_port} Time:{now}')
+        # 这里必须return 不然下面最后会在已关闭的socket上发送信息 gg
+        return
+        # player -= 1
+    # 等待对方发送超时
+    except asyncio.TimeoutError as e:
+        print(f"Timeout!：{str(e)}")
+        await send_sth("等待接收信息超时，自动断开")
+    # 自定义异常
+    except CustomException as e:
+        print(f"自定异常：{e.message}")
+        await send_sth(f"发生异常：{str(e)}")
+        if e.message == "请求网站未响应，可能是城市名错误或链家没有该城市网站":
+            await send_sth(e.message)
+    # player超过1或其他异常
+    except Exception as e:
+        print(f"发生了一个异常：{str(e)}")
+        await send_sth(f"发生异常：{str(e)}")
+    # endregion
+
+    # region 结束链接 结尾处理
+    #player.remove(f"{client_ip}:{client_port}")
+    r.lrem('player', 1, f'{client_ip}:{client_port} Time:{now}')
+    print("正常结束")
+    await send_sth(f"{client_ip}:{client_port}正常结束，断开")
+    await websocket.close()
+    # endregion
+
+# endregion
 
 '''
 @app.get("/users/", response_model=List[schemas.User])
