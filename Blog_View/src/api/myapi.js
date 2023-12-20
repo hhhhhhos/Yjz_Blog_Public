@@ -89,3 +89,21 @@ export function api9 (vuethis, data) {
     data
   })
 }
+
+export function api10 (vuethis) {
+  return myrest.rest_test({
+    // 发送blog的html到后端
+    vuethis,
+    url: 'yjztest',
+    method: 'get'
+  })
+}
+
+export function api11 (vuethis) {
+  return myrest.rest_test({
+    // 发送blog的html到后端
+    vuethis,
+    url: 'yjztest2',
+    method: 'get'
+  })
+}

@@ -8,7 +8,10 @@
           infinite-scroll-disabled="disabled"
           style="padding: 0;">
           <li v-for="i in count" class="list-item" :key="i" style="margin: 10px;">
-            <div>
+            <div v-if="i==1" style="color: var(--bs-gray-600);">
+              广告位招租
+            </div>
+            <div v-else>
               {{ i }}
             </div>
           </li>

@@ -3,10 +3,15 @@
     实时数据：{{ realTimeData }}
     <button @click="click">click</button>
     <button @click="click2">click2</button>
+    <button @click="click3">click3</button>
+    <button @click="click4">click4</button>
   </div>
 </template>
 
 <script>
+import { api10, api11 } from '@/api/myapi'
+import myrest from '@/utils/myrest'
+
 export default {
   data () {
     return {
@@ -15,7 +20,6 @@ export default {
     }
   },
   created () {
-    this.setupWebSocket()
   },
   methods: {
     setupWebSocket () {
@@ -51,7 +55,30 @@ export default {
     click2 () {
       console.log('click')
       this.sendMessag('hello')
+    },
+    click3 () {
+      console.log('click3')
+      api10(this).then(response => {
+        if (response.status === 200) {
+          myrest.suc_win(this, '发送成功,收到:' + response.data)
+          this.res_data = response.data
+        } else {
+          myrest.err_win(this, '发送失败了? TAT')
+        }
+      })
+    },
+    click4 () {
+      console.log('click4')
+      api11(this).then(response => {
+        if (response.status === 200) {
+          myrest.suc_win(this, '发送成功,收到:' + response.data)
+          this.res_data = response.data
+        } else {
+          myrest.err_win(this, '发送失败了? TAT')
+        }
+      })
     }
+
   },
   beforeDestroy () {
     this.onWebSocketClose() // 在组件销毁前关闭WebSocket连接
