@@ -6,23 +6,22 @@ import router from './router'
 // 自己加的
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
-import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
+import { VBToggle, BCollapse, BCard, IconsPlugin } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
-import BaiduMap from 'vue-baidu-map'
 import VueLazyload from 'vue-lazyload'
 // ---------
 
 Vue.config.productionTip = false
 // 自己加的
 Vue.use(ElementUI)
-Vue.use(BootstrapVue) // 可选择安装 BootstrapVue 图标组件插件
+// Vue.use(BootstrapVue) // 可选择安装 BootstrapVue 图标组件插件
 Vue.use(IconsPlugin)
-Vue.use(BaiduMap, {
-  // ak 是在百度地图开发者平台申请的密钥 详见 http://lbsyun.baidu.com/apiconsole/key */
-  ak: '25QIApw6F3kfB4SWDcKDswwA4aCkBZjj'
-})
 Vue.use(VueLazyload)
+Vue.directive('b-toggle', VBToggle)
+Vue.component('b-collapse', BCollapse)
+Vue.component('b-card', BCard)
+Vue.use(IconsPlugin)
 // ---------
 
 new Vue({

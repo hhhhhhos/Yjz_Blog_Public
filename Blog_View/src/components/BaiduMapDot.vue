@@ -31,7 +31,15 @@
 </style>
 
 <script>
+import BmMarker from 'vue-baidu-map/components/overlays/Marker.vue'
+import BmInfoWindow from 'vue-baidu-map/components/overlays/InfoWindow.vue'
+import BmLabel from 'vue-baidu-map/components/overlays/Label.vue'
 export default {
+  components: {
+    BmMarker,
+    BmInfoWindow,
+    BmLabel
+  },
   props: {
     Data: Object,
     showmode: Boolean

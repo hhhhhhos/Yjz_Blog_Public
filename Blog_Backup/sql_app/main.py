@@ -62,7 +62,7 @@ def result_handle(result, succmsg: str):
         raise HTTPException(status_code=400, detail="发生错误:"+result)
 
 
-# <editor-fold desc="下面是vue-admin-template后端">
+# region 下面是vue-admin-template后端
 
 # 自己写的
 class MyItem(BaseModel):
@@ -70,7 +70,7 @@ class MyItem(BaseModel):
     username: str
 
 # 自己写的
-@app.post("/api/user/login")
+@app.post("/admin3/api/user/login")
 def test(item: MyItem):
     if item.password == "123" and item.username == "sb":
         return {"code": 20000, "data": {"token": "321"}}
@@ -109,10 +109,10 @@ async def main():
     some_file_path = "sql_img/img_3.gif"
     return FileResponse(some_file_path)
 
-# </editor-fold>
+# endregion
 
 
-# <editor-fold desc="下面是 博客 后端">
+# region下面是 博客 后端
 
 # 自己写的 获取评论 返回当前页允许的评论条数 和总数统计
 @app.get("/table/info")
@@ -580,6 +580,83 @@ async def websocket_endpoint(websocket: WebSocket):
             }
         }))
 
+    # 把websocket头信息记录访客记录
+    def record_sth(params_all: dict):
+        db = SessionLocal()
+
+        # user_agent库处理设备信息
+        user_agent_string = websocket.headers.get("user-agent")
+        print(user_agent_string)
+        user_agent = parse(user_agent_string)
+
+        # 获取ip和ip的地址websocket.headers
+        ip_address = websocket.headers.get("x-real-ip")
+        print(ip_address)
+        location = "Unknown"
+        if ip_address:
+            try:
+                response2 = requests.get(f'https://api.vore.top/api/IPdata?ip={ip_address}', timeout=5).json()
+                if response2.get("code") == 200:
+                    city = response2.get("ipdata").get("info3")
+                    region = response2.get("ipdata").get("info2")
+                    country = response2.get("ipdata").get("info1")
+                    if region and city:
+                        location = region + ". " + city
+                    elif city:
+                        location = city
+                    elif region:
+                        location = region
+                    elif country:
+                        location = country
+                    else:
+                        location = "火星人"
+                else:
+                    location = "Unknown"
+            except Exception as e:
+                print("发生了一个异常：", e)
+                location = "Unknown"
+
+        '''
+        # 输出浏览器的信息
+        print("请求方法：", request.method)
+        print("请求地址：", request.headers.get('X-Original-URI'))
+        print("ip：", ip_address)
+        print("ip地点: ", location)
+        print("uuid: ", user_uuid)
+        print("user-agent全文：", user_agent_string)
+        print("浏览器名称: ", user_agent.browser.family)
+        print("浏览器版本: ", user_agent.browser.version_string)
+        print("操作系统名称: ", user_agent.os.family)
+        print("操作系统版本: ", user_agent.os.version)
+        print("设备类型: ", user_agent.device.family)
+        print("设备品牌: ", user_agent.device.brand)
+        print("是否是爬虫器: ", user_agent.is_bot)
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        '''
+        # 传到数据库
+
+        result = crud.create_iphistory2(db=db, iphistory2=models.IpHistory2(
+            request_method='ws/wss',
+            # 这里是爬虫参数 + 爬取结果
+            request_url=str(params_all.get('params')) + str(params_all.get('result')),
+            ip=ip_address,
+            ip_location=location,
+            unicode='whatever',
+            browser_name=user_agent.browser.family,
+            browser_version=user_agent.browser.version_string,
+            os_name=user_agent.os.family,
+            os_version='.'.join(map(str, user_agent.os.version)),
+            device_name=user_agent.device.family,
+            device_brand=user_agent.device.brand,
+            is_bot=user_agent.is_bot,
+            datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        ))
+        print("已添加一条历史记录 结果为:" + result)
+        db.close()  # 确保数据库会话在结束时被关闭
+        # END #####
+    print(websocket.headers.get('cookie'))
+
     # endregion
 
     # region 引入全局变量/定义局部变量
@@ -591,6 +668,8 @@ async def websocket_endpoint(websocket: WebSocket):
     client_ip = None
     client_port = None
     now = None
+    # socket最终结果
+    final_result = {'params': None, 'result': None}
     # endregion
 
     # region websocket try处理
@@ -606,11 +685,17 @@ async def websocket_endpoint(websocket: WebSocket):
         if player:
             print(f'进入player判断，player为：{player}')
             # 创建一个管道，运行ss命令并结合grep过滤本地端口号为8080的连接 WIN命令
-            process = subprocess.Popen(f'netstat -ano | findstr {client_ip}:{client_port}', shell=True, stdout=subprocess.PIPE)
+            #process = subprocess.Popen(f'netstat -ano | findstr {client_ip}:{client_port}', shell=True, stdout=subprocess.PIPE)
+            # linux命令
+            process = subprocess.Popen(f'netstat -tunlp | grep {client_ip}:{client_port}', shell=True,
+                                       stdout=subprocess.PIPE)
             # 获取命令的输出
             output, error = process.communicate()
             new_return = output.decode()
-            new_return = re.findall(r'\s+\S+\s+\S+\s+\S+\s+(\S+)\s+', new_return, re.DOTALL)
+            # win匹配
+            #new_return = re.findall(r'\s+\S+\s+\S+\s+\S+\s+(\S+)\s+', new_return, re.DOTALL)
+            # linux匹配（多一个）
+            new_return = re.findall(r'\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)\s+', new_return, re.DOTALL)
             print(new_return)
             # 防空 空则改
             if not new_return:
@@ -633,11 +718,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
         # region 等待接收信息 5秒超时/json转dict
         # 这里收到的是字符串
-        # 5秒收不到新信息断开
+        # 5秒收不到新信息抛异常
         data = await asyncio.wait_for(websocket.receive_text(), timeout=5)
         print("收到：", data)
         # 将类似json的字符串转换为python字典
         data = json.loads(data)
+        # 记录一下客户选择参数params到final_result['params'] =
+        final_result['params'] = data.get('params')
         # endregion
 
         # region 收到信息 做点什么... 防空判断
@@ -663,6 +750,8 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print(f"{client_ip}:{client_port}断开了连接")
         print("客户端断开链接，发起return")
+        final_result['result'] = "客户端断开链接，发起return"
+        record_sth(final_result)
         r.lrem('player', 1, f'{client_ip}:{client_port} Time:{now}')
         # 这里必须return 不然下面最后会在已关闭的socket上发送信息 gg
         return
@@ -671,16 +760,19 @@ async def websocket_endpoint(websocket: WebSocket):
     except asyncio.TimeoutError as e:
         print(f"Timeout!：{str(e)}")
         await send_sth("等待接收信息超时，自动断开")
+        final_result['result'] = f"Timeout!：{str(e)}"
     # 自定义异常
     except CustomException as e:
         print(f"自定异常：{e.message}")
         await send_sth(f"发生异常：{str(e)}")
         if e.message == "请求网站未响应，可能是城市名错误或链家没有该城市网站":
             await send_sth(e.message)
+            final_result['result'] = f"自定异常：{e.message}"
     # player超过1或其他异常
     except Exception as e:
         print(f"发生了一个异常：{str(e)}")
         await send_sth(f"发生异常：{str(e)}")
+        final_result['result'] = f"发生异常：{str(e)}"
     # endregion
 
     # region 结束链接 结尾处理
@@ -688,10 +780,15 @@ async def websocket_endpoint(websocket: WebSocket):
     r.lrem('player', 1, f'{client_ip}:{client_port} Time:{now}')
     print("正常结束")
     await send_sth(f"{client_ip}:{client_port}正常结束，断开")
+    final_result['result'] = "正常结束"
+    record_sth(final_result)
     await websocket.close()
     # endregion
 
 # endregion
+
+# endregion
+
 
 '''
 @app.get("/users/", response_model=List[schemas.User])
@@ -735,5 +832,5 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     # 返回创建的user对象
     return crud.create_user(db=db, user=user)
 '''
-# </editor-fold> ###########
+
 

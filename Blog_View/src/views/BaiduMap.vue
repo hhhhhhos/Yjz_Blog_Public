@@ -4,7 +4,7 @@
     <!-- 操作面板 -->
     <div style="padding: 45px 85px 25px 0;min-width: 600px;">
       <div class="myitem" style="display: block;">
-        <div style="color: #1F2F3D;font-weight:bold ;">链家爬虫可视化作业</div>
+        <div style="color: #1F2F3D;font-weight:bold ;">链家爬虫可视化作业<sub style="margin-left: 10px;color: var(--bs-gray-300);">1.0</sub></div>
         <div style="display: flex;">爬取城市:<el-input style="max-width: 200px;height: 5px;margin-left: 15px;" v-model="input1" placeholder="(选填) 默认广州"></el-input></div>
         <div style="display: flex;">爬取价格:
           <el-checkbox-group style="margin-left: 15px;" v-model="checkboxGroup2" size="medium" @change="limitToOne">
@@ -25,7 +25,7 @@
     <!-- 地图面板 -->
     <div style="display: flex;">
       <!-- 地图 -->
-      <baidu-map ref="myMap" style="min-width: 1000px;border-radius: 5px;border: 5px solid #ffffff;box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);" class="map" :center="this.centerpoint" :zoom=13 :scroll-wheel-zoom="true">
+      <baidu-map ak="25QIApw6F3kfB4SWDcKDswwA4aCkBZjj" ref="myMap" style="min-width: 1000px;border-radius: 5px;border: 5px solid #ffffff;box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);" class="map" :center="this.centerpoint" :zoom=13 :scroll-wheel-zoom="true">
         <!-- 杂七杂八控件 -->
         <bm-scale anchor="BMAP_ANCHOR_TOP_RIGHT"></bm-scale>
         <bm-control style="display: flex;">
@@ -70,9 +70,9 @@
       <!-- 历史记录 -->
       <div class="myborder" style="margin-left:  5px;width: 300px;height: 600px;">
         <!-- 历史记录标题 -->
-        <div class="myborder" style="color: var(--textcolor1);padding: 4px 0;background-color: #ffffff;">历史记录&nbsp;&nbsp;&nbsp;</div>
+        <div class="myborder" style="min-width: 200px;color: var(--textcolor1);padding: 4px 0;background-color: #ffffff;">历史记录&nbsp;&nbsp;&nbsp;</div>
         <!-- 模拟数据 -->
-        <div class="myborder" style="margin: 5px 0 0 0;height: 540px;overflow-y: auto;background-color: #ffffff;">
+        <div class="myborder" style="min-width: 200px;margin: 5px 0 0 0;height: 540px;overflow-y: auto;background-color: #ffffff;">
           <div v-for="(Data, index) in sortDatas" :key="Data.index" style="display: flex;cursor: pointer;" @click="test(Data)" class="myhover">
             <div style="flex-grow: 1;text-align: left;">{{index+1}}.{{Data.小区[0]}}</div>
             <div style="text-align: right;">{{Data.价格}}</div>
@@ -146,16 +146,53 @@
 </style>
 
 <script>
-import BaiduMapDot from '@/components/BaiduMapDot.vue'
+// 异步组件尝试
+import { defineAsyncComponent } from 'vue'
+
 import Pinyin from 'pinyin'
 import pinyin2 from 'js-pinyin'
 import * as echarts from 'echarts'
+
+// 引入你需要的图表类型，这里包括柱状图和折线图
+import { BarChart, LineChart } from 'echarts/charts'
+
+// 引入你需要的组件，这里包括标题、提示框、网格等
+import {
+  TitleComponent,
+  TooltipComponent,
+  GridComponent
+} from 'echarts/components'
+
+// 引入 Canvas 渲染器，注意 ECharts 按需引入的时候不再提供任何渲染器
+import { CanvasRenderer } from 'echarts/renderers'
+
+// 使用所需的组件
+echarts.use([
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  BarChart,
+  LineChart,
+  CanvasRenderer
+])
+
 const cityOptions = ['默认', '最贵', '最低']
+const BaiduMapDot = defineAsyncComponent(() => import('@/components/BaiduMapDot.vue'))
+const BaiduMap = defineAsyncComponent(() => import('vue-baidu-map/components/map/Map.vue'))
+const BmScale = defineAsyncComponent(() => import('vue-baidu-map/components/controls/Scale.vue'))
+const BmControl = defineAsyncComponent(() => import('vue-baidu-map/components/controls/Control.vue'))
+const BmNavigation = defineAsyncComponent(() => import('vue-baidu-map/components/controls/Navigation.vue'))
+const BmMapType = defineAsyncComponent(() => import('vue-baidu-map/components/controls/MapType.vue'))
 pinyin2.setOptions({ checkPolyphone: false, charCase: 1 })
 
 export default {
   components: {
-    BaiduMapDot
+    BaiduMapDot,
+    BaiduMap,
+    BmScale,
+    BmControl,
+    BmNavigation,
+    BmMapType
   },
   data () {
     return {
@@ -300,7 +337,8 @@ export default {
     },
     // 初始化socket链接
     setupWebSocket () {
-      this.websocket = new WebSocket('ws://localhost:8001/ws') // 创建WebSocket连接
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      this.websocket = new WebSocket(protocol + '://43.139.15.96/ws') // 创建WebSocket连接
       this.websocket.onopen = this.onWebSocketOpen // WebSocket连接打开时的处理函数
       this.websocket.onerror = this.onWebSocketError //
       this.websocket.onmessage = this.onWebSocketMessage // 收到WebSocket消息时的处理函数
@@ -313,6 +351,10 @@ export default {
       // '哈尔滨'heb链家是hrb 特殊情况特殊处理
       if (this.input1 === '哈尔滨') {
         city = 'hrb'
+      }
+      // ...
+      if (this.input1 === '洛阳') {
+        city = 'luoyang'
       }
       this.sendMessag({
         method: '爬虫',
