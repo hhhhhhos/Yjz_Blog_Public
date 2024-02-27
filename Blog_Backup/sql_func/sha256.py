@@ -45,7 +45,7 @@ def hash_password(password):
     # 存储盐值和哈希值
     #storage = salt + key
 
-    return key
+    return binascii.hexlify(key).decode('utf-8')
 
-know_hash()
-hash_password("1")
+#know_hash()
+#hash_password("1")

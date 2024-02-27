@@ -1,7 +1,8 @@
 # region 原本fastapi引用
 import time
+from typing import Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Form
+from fastapi import Depends, FastAPI, HTTPException, Query, Form, Response
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
@@ -27,13 +28,16 @@ from fastapi import Request
 from user_agents import parse
 import requests
 from uuid import uuid4
+from .schemas import R
+from sql_func import sha256
+from sqlalchemy import func, desc, and_, or_
 # endregion
 
 # region 爬虫作业引用
 import json
 import re
 import subprocess
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import WebSocket, WebSocketDisconnect
 import asyncio
 from sql_func import demo
 from .models import CustomException
@@ -43,6 +47,7 @@ import redis
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+# 中间件session
 
 
 # 依赖
@@ -150,8 +155,8 @@ def table_info2(ipitem: schemas.IpItem, class_name: str, db: Session = Depends(g
 
 
 # 参数 不定表 的 不定列 返回group类型和统计个数 filter_text过滤列名
-@app.get("/models/{model_name}/types/{column}")
-def models_types_and_count(model_name: str, column: str, filter_text: str = "", skip: int = 0, limit: int = 10,
+@app.post("/models/{model_name}/types/{column}/{searchText}")
+def models_types_and_count(model_name: str, column: str, searchText: str, filteritem: Optional[schemas.FilterItem] = None, filter_text: str = "", skip: int = 0, limit: int = 10,
                            db: Session = Depends(get_db)):
     # 检查 models.model_name 和 models.model_name.column 是否存在
     if hasattr(models, model_name) and hasattr(getattr(models, model_name), column):
@@ -160,7 +165,16 @@ def models_types_and_count(model_name: str, column: str, filter_text: str = "", 
     else:
         raise HTTPException(status_code=400, detail="选项不存在或者输入有误")
 
-    return crud.get_models_column_types2(db, column, filter_text, skip, limit)
+    if hasattr(filteritem,'datas'):
+        datas = filteritem.datas
+    else:
+        datas = None
+
+    if searchText != "null":
+        filter_text = searchText
+        print("searchText:"+searchText)
+
+    return crud.get_models_column_types2(db, column, datas,filter_text,skip, limit, model)
 
 '''
 # 备份一下原来的
@@ -415,10 +429,12 @@ def read_items(request: Request):
 # 中间件 所有请求都经过这个
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
+    print(f"request.url:{request.url}")
+    print(f"request.base_url:{request.base_url}")
     response = await call_next(request)
     # 这里放你想做的事 #######
     db = SessionLocal()  # 创建一个新的数据库会话
-    print("已启动中间件")
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]:已启动中间件")
 
     # cookie处理用户user_uuid set_cookie只在直接反代时有用 post_action @log_request时set_cookie没用
     user_uuid = request.cookies.get("user_uuid")
@@ -441,6 +457,7 @@ async def add_process_time_header(request: Request, call_next):
     location = "Unknown"
     if ip_address:
         try:
+            """
             response2 = requests.get(f'https://api.vore.top/api/IPdata?ip={ip_address}', timeout=5).json()
             if response2.get("code") == 200:
                 city = response2.get("ipdata").get("info3")
@@ -458,8 +475,19 @@ async def add_process_time_header(request: Request, call_next):
                     location = "火星人"
             else:
                 location = "Unknown"
+            """
+            # json转字典
+            response_json = requests.get(f"https://opendata.baidu.com/api.php?query={ip_address}&co=&resource_id=6006&oe=utf8")\
+                .json()
+
+            # 字典取值 空返回None 不取
+            if response_json.get("data"):
+                location = response_json.get("data")[0]["location"]
+                print(f"获取ip地点为{location}")
+            else:
+                print("获取ip地点为空")
         except Exception as e:
-            print("发生了一个异常：", e)
+            print("获取ip地址时，发生了一个异常：", e)
             location = "Unknown"
 
 
@@ -533,14 +561,160 @@ def yjztest(request: Request):
     return "运行！！！8："+"😀"
 
 @app.get("/yjztest2")
-def yjztest():
+def yjztest(db: Session = Depends(get_db)):
     print('receive!2')
-    return "运行2！！！："+"😀😀😀"
+    crud.crud_test(db)
+    return crud.crud_test(db)
+
+
+
+from pytz import timezone
+@app.get("/mytest")
+def yjztest(request: Request,response: Response, db: Session = Depends(get_db)):
+    response.set_cookie("sbsb", "sbbbb", max_age=60)  # 1天后过期
+    print("request.headers.get('x-real-ip'):")
+    print(request.headers.get("x-real-ip"))
+    print("request.headers.get")
+    print(request.headers.get("host"))
+    print("request.headers.get('X-Original-URI')")
+    print(request.headers.get('X-Original-URI'))
+
+
+
+@app.put("/myput")
+def update_by_ip_location(request: Request, num: int = 0, db: Session = Depends(get_db)):
+    # 登录权限验证 #有无秘钥cookie
+    if request.cookies.get("secret_key"):
+        uuid = request.cookies.get("secret_key")
+        r = redis.Redis(host='localhost', port=6379, db=0, password=123321)
+        # 秘钥 有无在redis #访问ip 是否等于 redis存的ip
+        ## 防ip None和redis " "判断False 搞一样
+        x_real_ip = request.headers.get("x-real-ip")
+        if not x_real_ip:
+            x_real_ip = " "
+        ## redis字节码记得转换.decode()
+        if x_real_ip == r.get(uuid).decode():
+            # 数据库admin uuid对得上吗
+            if r.get("admin").decode() == uuid:
+                pass
+            else:
+                return R.error("权限不足")
+        # redis秘钥不存在（过期）
+        else:
+            print("下面是x-real-ip和redis-ip:")
+            print(x_real_ip)
+            print(r.get(uuid))
+            return R.error("请重新登录")
+    else:
+        return R.error("未登录")
+
+    result = []
+    count = db\
+        .query(models.IpHistory2)\
+        .filter(and_(models.IpHistory2.ip.isnot(None), models.IpHistory2.ip_location == "Unknown"), models.IpHistory2.ip != "127.0.0.1") \
+        .count()
+
+    db_book = db\
+        .query(models.IpHistory2)\
+        .filter(and_(models.IpHistory2.ip.isnot(None), models.IpHistory2.ip_location == "Unknown"), models.IpHistory2.ip != "127.0.0.1") \
+        .offset(0).limit(num) \
+        .all()
+
+    for item in db_book:
+        location = "Unknown2"
+        try:
+            response_json = requests.get(f"https://opendata.baidu.com/api.php?query={item.ip}&co=&resource_id=6006&oe=utf8").json()
+            if response_json.get("data"):
+                location = response_json.get("data")[0]["location"]
+            item.ip_location = location
+            print(f"获取到为{location}")
+            result.append("获取到为"+location)
+        except Exception as e:
+            pass
+            result.append("异常:"+str(e))
+
+
+    db.commit()
+
+    for item in db_book:
+        db.refresh(item)
+
+    return {"count": count, "data": db_book, "result": result}
+
+@app.post("/login")
+def yjztest2(login: schemas.Login,request: Request,response: Response, db: Session = Depends(get_db)):
+    try:
+        r = redis.Redis(host='localhost', port=6379, db=0, password=123321)
+        # 根据 cookie redis判断是否登录
+        secret_key = request.cookies.get("secret_key")
+        if secret_key and r.get(secret_key):
+            return R.error("已登录，不能再次登录")
+
+        # 用户名是否存在判断
+        res = db.query(models.User).filter(models.User.name == login.name).one_or_none()
+        # 用户存在
+        if res:
+            # 密码正确
+            if res.password == sha256.hash_password(login.password):
+                uuid = str(uuid4())
+                # 管理员
+                if res.role == "admin":
+                    response.set_cookie("secret_key", uuid, max_age=60*60*12)  # 1天后过期
+                    ip = request.headers.get("x-real-ip")
+                    # 防None redis报错
+                    if ip:
+                        r.set(uuid, ip) # 键 uuid 值 ip
+                    else:
+                        r.set(uuid," ")
+                    r.expire(uuid, 60*60*12)  # 1天后过期
+                    r.set("admin", uuid)  # 键 "admin" 值 uuid
+                    r.expire(uuid, 60 * 60 * 12)  # 1天后过期
+                    #r.set(uuid,request.)
+                else:
+                # 普通用户
+                    response.set_cookie("secret_key", uuid)  # 不过期
+                    ip = request.headers.get("x-real-ip")
+                    # 防None redis报错
+                    if ip:
+                        r.set(uuid, ip)  # 键 uuid 值 ip
+                    else:
+                        r.set(uuid, " ")
+                    r.expire(uuid, 60 * 60 * 12 * 10)  # 10天后过期
+
+                return R.success("登录成功")
+
+            # 密码错误
+            else:
+                return R.error("密码错误或用户不存在")
+        # 用户不存在
+        else:
+            return R.error("密码错误或用户不存在")
+    except Exception as e:
+        # 用户重名/其他错误
+        return R.error(str(e))
+
+@app.get("/logout")
+def abcc(request: Request,response: Response, db: Session = Depends(get_db)):
+    r = redis.Redis(host='localhost', port=6379, db=0, password=123321)
+    # 根据 cookie redis判断是否登录
+    uuid= request.cookies.get("secret_key")
+    if uuid and r.get(uuid):
+        response.delete_cookie("secret_key")
+        r.delete(uuid)
+        # 判断是否管理员登出 是删admin健
+        # 防空  .decode()报错
+        if r.get("admin") and uuid == r.get("admin").decode():
+            r.delete("admin")
+            return R.success("admin已登出")
+        return R.success("已登出")
+    else:
+        return R.error("未登录，不能登出")
 
 # region 套接字 爬虫大作业功能模块
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
 
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]:已进入/ws")
     # region 功能函数
 
     # 发起爬虫函数
@@ -595,23 +769,17 @@ async def websocket_endpoint(websocket: WebSocket):
         location = "Unknown"
         if ip_address:
             try:
-                response2 = requests.get(f'https://api.vore.top/api/IPdata?ip={ip_address}', timeout=5).json()
-                if response2.get("code") == 200:
-                    city = response2.get("ipdata").get("info3")
-                    region = response2.get("ipdata").get("info2")
-                    country = response2.get("ipdata").get("info1")
-                    if region and city:
-                        location = region + ". " + city
-                    elif city:
-                        location = city
-                    elif region:
-                        location = region
-                    elif country:
-                        location = country
-                    else:
-                        location = "火星人"
+                # json转字典
+                response_json = requests.get(
+                    f"https://opendata.baidu.com/api.php?query={ip_address}&co=&resource_id=6006&oe=utf8") \
+                    .json()
+
+                # 字典取值 空返回None 不取
+                if response_json.get("data"):
+                    location = response_json.get("data")[0]["location"]
+                    print(f"获取ip地点为{location}")
                 else:
-                    location = "Unknown"
+                    print("获取ip地点为空")
             except Exception as e:
                 print("发生了一个异常：", e)
                 location = "Unknown"
@@ -633,15 +801,17 @@ async def websocket_endpoint(websocket: WebSocket):
         print("是否是爬虫器: ", user_agent.is_bot)
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         '''
-        # 传到数据库
+        # 获取用户uuid
+        user_uuid = websocket.cookies.get("user_uuid")
 
+        # 传到数据库
         result = crud.create_iphistory2(db=db, iphistory2=models.IpHistory2(
             request_method='ws/wss',
             # 这里是爬虫参数 + 爬取结果
             request_url=str(params_all.get('params')) + str(params_all.get('result')),
             ip=ip_address,
             ip_location=location,
-            unicode='whatever',
+            unicode=user_uuid,
             browser_name=user_agent.browser.family,
             browser_version=user_agent.browser.version_string,
             os_name=user_agent.os.family,

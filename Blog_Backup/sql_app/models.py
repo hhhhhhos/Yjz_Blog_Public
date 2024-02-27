@@ -84,11 +84,15 @@ class User(Base):
     # 定义属性
     id = Column(Integer, primary_key=True)
     name = Column(String(30))  # 名字
-    email = Column(String(30)) # 注册的邮箱
-    blog_url = Column(String(30)) # 用户的博客
-    icon_url = Column(String(30)) # 头像地址
-    last_visited = Column(DateTime) # 最后访问日期
+    password = Column(String(200))
+    email = Column(String(200)) # 注册的邮箱
+    #blog_url = Column(String(200)) # 用户的博客
+    #icon_url = Column(String(200)) # 头像地址
+    #last_visited = Column(DateTime) # 最后访问日期
     role = Column(String(30))  # 角色权限 visitor admin vip1 vip2
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 # 自定义异常模块
 class CustomException(Exception):

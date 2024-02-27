@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from . import models, schemas
-import time
+from datetime import datetime
 from typing import List
 from sqlalchemy import func, desc, and_, or_
 
@@ -125,11 +125,22 @@ def get_table_info(db: Session, skip: int, limit: int, datas: List[schemas.DataI
                 #不存在就创建
                 lists[data.motivate_item] = []
 
-            # 筛选条件列表 加表达式
-            lists[data.motivate_item].append(getattr(table, data.motivate_item) == data.motivate_item_name)
+            # 布尔字符串转换
+            if data.motivate_item_name == "True":
+                data.motivate_item_name = True
+            if data.motivate_item_name == "False":
+                data.motivate_item_name = False
+
+            # 时间改区间判断
+            if data.motivate_item == "datetime":
+                lists[data.motivate_item].append(and_(getattr(table, data.motivate_item) >= data.motivate_item_name["time1"],getattr(table, data.motivate_item) <= data.motivate_item_name["time2"]))
+            else:
+                # 筛选条件列表 加表达式
+                lists[data.motivate_item].append(getattr(table, data.motivate_item) == data.motivate_item_name)
         else:
             raise HTTPException(status_code=400, detail="选项不存在或者输入有误")
 
+    print(f"list:{lists}")
     # 每个item or展开 存放到lst
     # 注意！遍历字典只会遍历到key 遍历不到值
     or_conditions_lst = [or_(*lists[lst]) for lst in lists]
@@ -164,26 +175,94 @@ def get_models_column_types(db: Session, column):
 
 
 # 改版 想试试过滤筛选filter_text为筛选文本
-def get_models_column_types2(db: Session, column, filter_text: str, skip: int, limit: int):
+def get_models_column_types2(db: Session, column, datas: List[schemas.DataItem], filter_text: str, skip: int, limit: int, model):
     # column可以为models.IpHistory2.ip_location
     # 创建一个子查询，返回每个column值及其对应的计数
     #column = models.IpHistory2.ip_location
-    subquery = db.query(column.label('type'), func.count(column).label('count')).group_by(column).subquery()
+    #model = models.IpHistory2
+    # 如果有筛选选项
+    if datas:
+        # 存放筛选条件列表
+        lists = {}
+        # 遍历筛选条件
+        for data in datas:
+            # 判断 动态选项 是否都有写 且动态选项存在
+            if data.motivate_item and hasattr(model, data.motivate_item):
+                # 是否已存在表
+                if data.motivate_item not in lists:
+                    # 不存在就创建
+                    lists[data.motivate_item] = []
 
-    # 在主查询中使用子查询，并按照计数的降序进行排序 筛选字段
-    result = db.query(subquery).filter(subquery.c.type.like(f"%{filter_text}%")).order_by(desc(subquery.c.count)) \
-        .offset(skip).limit(limit).all()
+                # 布尔字符串转换
+                if data.motivate_item_name == "True":
+                    data.motivate_item_name = True
+                if data.motivate_item_name == "False":
+                    data.motivate_item_name = False
+                # 时间改区间判断
+                if data.motivate_item == "datetime":
+                    lists[data.motivate_item].append(
+                        and_(getattr(model, data.motivate_item) >= data.motivate_item_name["time1"],
+                             getattr(model, data.motivate_item) <= data.motivate_item_name["time2"]))
+                else:
+                    # 筛选条件列表 加表达式
+                    lists[data.motivate_item].append(getattr(model, data.motivate_item) == data.motivate_item_name)
+            else:
+                raise HTTPException(status_code=400, detail="选项不存在或者输入有误")
+
+        print(f"list:{lists}")
+        # 每个item or展开 存放到lst
+        # 注意！遍历字典只会遍历到key 遍历不到值
+        or_conditions_lst = [or_(*lists[lst]) for lst in lists]
+        # and联立所有or lst
+
+
+        filters = and_(column.like(f"%{filter_text}%"),*or_conditions_lst)
+    else:
+        filters = and_(column.like(f"%{filter_text}%"),)
+
+    # 子查询，只选择你感兴趣的列
+    subquery = db \
+        .query(column.label('type')) \
+        .filter(filters) \
+        .subquery()
+
+    # 主查询，对子查询的结果进行分组和计数
+    result = db \
+        .query(subquery.c.type, func.count(subquery.c.type).label('count')) \
+        .group_by(subquery.c.type) \
+        .order_by(desc(func.count(subquery.c.type))) \
+        .offset(skip).limit(limit) \
+        .all()
     # result = db.query(column, func.count(column)).group_by(column).all()
-    return [{"type": types, "count": count} for types, count in result]
+    return [{"type": str(types), "count": count} for types, count in result]
 
 
 # 测试
-def crud_test(db: Session):
-    result = db.query(models.IpHistory2.id, func.count(models.IpHistory2.id)).group_by(models.IpHistory2.id).offset(0).limit(3).all()
+def crud_test2(db: Session):
+    filters = or_(models.IpHistory2.request_method == 'GET',models.IpHistory2.request_method == 'GET')
+    result = db\
+        .query(models.IpHistory2.ip_location, func.count(models.IpHistory2.ip_location)) \
+        .filter(filters)\
+        .order_by(func.count(models.IpHistory2.ip_location).desc())\
+        .group_by(models.IpHistory2.ip_location)\
+        .offset(0)\
+        .limit(3)\
+        .all()
     result_json = [{"type": types, "count": count} for types, count in result]
     # 测试发现 直接返回包含元祖的列表有时会报错
     print(result_json) # 显示[('广州市. 海珠',), ('广州市. 海珠',), ('广州市. 海珠',), ('广州市. 海珠',), ('广州市. 海珠',)]
     return result_json
+
+
+def crud_test(ob: schemas.Ob, db: Session):
+    results = db\
+        .query(models.IpHistory2.datetime)\
+        .filter(and_(models.IpHistory2.datetime>=ob.time1,models.IpHistory2.datetime<=ob.time2)) \
+        .all()
+
+    #拆掉元组
+    results = [result[0]for result in results]
+    return results
 
 # 返回ip历史总数
 def get_iphistory_count(db: Session):
